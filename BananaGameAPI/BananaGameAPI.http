@@ -1,0 +1,6 @@
+@BananaGameAPI_HostAddress = http://localhost:5062
+
+GET {{BananaGameAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
