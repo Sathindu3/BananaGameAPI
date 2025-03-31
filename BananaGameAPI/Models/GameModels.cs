@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace BananaGameAPI.Models
 {
@@ -21,10 +22,12 @@ namespace BananaGameAPI.Models
         public string PlayerName { get; set; } = string.Empty;
         public int Points { get; set; }
     }
-
     public class QuizResponse
     {
+        [JsonProperty("question")]
         public string Question { get; set; } = string.Empty;
-        public string Answer { get; set; } = string.Empty;
+
+        [JsonProperty("solution")] // ✅ Corrected from "answer" to "solution"
+        public string Solution { get; set; } = string.Empty;
     }
 }
