@@ -51,24 +51,38 @@ namespace BananaGameAPI.Controllers
 
         // ✅ Submit Score
         [HttpPost("score")]
-        public IActionResult SubmitScore([FromBody] Score score)
+        public async Task<IActionResult> SubmitScore([FromBody] Score score)
         {
-            if (score == null || string.IsNullOrEmpty(score.PlayerName))
+            if (score == null || score.PlayerId <= 0)
             {
                 return BadRequest(new { success = false, message = "Invalid score data" });
             }
 
             try
             {
-                _context.Scores.Add(score);
-                _context.SaveChanges();
-                return Ok(new { success = true, message = "Score saved!" });
+                var player = await _context.Players.FindAsync(score.PlayerId);
+                if (player == null)
+                {
+                    return NotFound(new { success = false, message = "Player not found!" });
+                }
+
+                var newScore = new Score
+                {
+                    PlayerId = player.Id,
+                    Points = score.Points
+                };
+
+                _context.Scores.Add(newScore);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Score saved!", data = newScore });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = "Error saving score", error = ex.Message });
             }
         }
+
 
         // ✅ Get Top 5 Leaderboard Scores
         [HttpGet("leaderboard")]

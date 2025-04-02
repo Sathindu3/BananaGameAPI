@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using BananaGameAPI.Data;
-using BananaGameAPI.Models;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using BananaGameAPI.DTOs;
+using BananaGameAPI.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BananaGameAPI.Controllers
 {
@@ -11,38 +8,24 @@ namespace BananaGameAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly GameDbContext _context;
+        private readonly AuthService _authService;
 
-        public AuthController(GameDbContext context)
+        public AuthController(AuthService authService)
         {
-            _context = context;
+            _authService = authService;
         }
 
-        // Player Signup
-        [HttpPost("signup")]
-        public async Task<IActionResult> Signup([FromBody] Player player)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterPlayerDto dto)
         {
-            if (_context.Players.Any(p => p.Username == player.Username))
-            {
-                return BadRequest(new { message = "Username already exists" });
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            _context.Players.Add(player);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Signup successful!" });
-        }
+            var result = await _authService.RegisterPlayer(dto);
+            if (result == "Email already exists!")
+                return Conflict(new { message = result });
 
-        // Player Login
-        [HttpPost("login")]
-        public IActionResult Login([FromBody] Player player)
-        {
-            var existingPlayer = _context.Players.FirstOrDefault(p => p.Username == player.Username && p.Password == player.Password);
-            if (existingPlayer == null)
-            {
-                return Unauthorized(new { message = "Invalid credentials" });
-            }
-
-            return Ok(new { message = "Login successful!", playerId = existingPlayer.Id, username = existingPlayer.Username });
+            return Ok(new { message = result });
         }
     }
 }
