@@ -1,6 +1,7 @@
 ﻿using BananaGameAPI.Data;
 using BananaGameAPI.DTOs;
 using BananaGameAPI.Models;
+using Microsoft.AspNetCore.Http; // For session management
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace BananaGameAPI.Services
         private readonly GameDbContext _context;
         private readonly PasswordHasher<Player> _passwordHasher;
 
-        // Injecting PasswordHasher using Dependency Injection
+        // Injecting PasswordHasher and IHttpContextAccessor (for session) using Dependency Injection
         public AuthService(GameDbContext context, PasswordHasher<Player> passwordHasher)
         {
             _context = context;
@@ -45,21 +46,39 @@ namespace BananaGameAPI.Services
             return "Player registered successfully!";
         }
 
-        // Login player
-        public async Task<Player?> LoginPlayer(LoginPlayerDto dto)
+        // Login player and store session data
+        public async Task<Player?> LoginPlayer(LoginPlayerDto dto, ISession session)
         {
             // Find player by email
             var player = await _context.Players.FirstOrDefaultAsync(p => p.Email == dto.Email);
             if (player == null)
-                return null;
+                return null;  // Player not found
 
             // Verify password
             var verificationResult = _passwordHasher.VerifyHashedPassword(player, player.PasswordHash, dto.Password);
             if (verificationResult == PasswordVerificationResult.Failed)
-                return null;
+                return null;  // Password mismatch
+
+            // Store player data in session
+            session.SetString("PlayerId", player.Id.ToString());
+            session.SetString("Username", player.Username);
+            session.SetString("Email", player.Email);
 
             // Return player if login is successful
             return player;
+        }
+
+        // Logout player and clear session
+        public void LogoutPlayer(ISession session)
+        {
+            session.Clear(); // Clear all session data
+        }
+
+        // Helper function to check if user is logged in
+        public bool IsLoggedIn(ISession session)
+        {
+            var playerId = session.GetString("PlayerId");
+            return !string.IsNullOrEmpty(playerId);
         }
     }
 }

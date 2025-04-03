@@ -49,7 +49,7 @@ namespace BananaGameAPI.Controllers
             }
         }
 
-        // ✅ Submit Score
+        // ✅ Submit Score (for individual player actions)
         [HttpPost("score")]
         public async Task<IActionResult> SubmitScore([FromBody] Score score)
         {
@@ -66,6 +66,7 @@ namespace BananaGameAPI.Controllers
                     return NotFound(new { success = false, message = "Player not found!" });
                 }
 
+                // Create and save the new score
                 var newScore = new Score
                 {
                     PlayerId = player.Id,
@@ -82,7 +83,6 @@ namespace BananaGameAPI.Controllers
                 return StatusCode(500, new { success = false, message = "Error saving score", error = ex.Message });
             }
         }
-
 
         // ✅ Get Top 5 Leaderboard Scores
         [HttpGet("leaderboard")]
@@ -103,15 +103,7 @@ namespace BananaGameAPI.Controllers
             }
         }
 
-        [HttpPost("saveResult")]
-        public async Task<IActionResult> SaveGameResult([FromBody] GameResult result)
-        {
-            if (result == null) return BadRequest("Invalid game result data");
-
-            _context.GameResults.Add(result);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Game result saved successfully!" });
-        }
+        // ✅ Save Game Result (this includes winner information and match result)
+        
     }
 }

@@ -1,13 +1,26 @@
 ﻿using BananaGameAPI.Data;
 using BananaGameAPI.Models;
-using BananaGameAPI.Services; // Import AuthService
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using BananaGameAPI.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CORS Configuration
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000") // Frontend URL
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();  // Allow credentials (cookies)
+        });
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -22,42 +35,32 @@ builder.Services.AddDbContext<GameDbContext>(options =>
 // Register AuthService for Dependency Injection
 builder.Services.AddScoped<AuthService>(); // Add this line to register AuthService
 
-// Enable CORS
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000") // Allow frontend
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
-});
-
-// ✅ Add Authentication using JWT
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "Your_Secret_Key_123");
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// Add authentication with cookie scheme
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
     {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = false, // Set this to true if needed
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "Your_Issuer",
-            IssuerSigningKey = new SymmetricSecurityKey(key)
-        };
+        options.LoginPath = "/api/auth/login"; // Redirect to login if not authenticated
+        options.LogoutPath = "/api/auth/logout"; // Redirect to logout path
+        options.Cookie.HttpOnly = true;  // Make the cookie HTTP-only
+        options.SlidingExpiration = true; // Enable sliding expiration
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(1); // Cookie expiration time
     });
 
+// Add session services
+builder.Services.AddDistributedMemoryCache(); // Use in-memory cache for session storage
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(1); // Set timeout for sessions
+    options.Cookie.HttpOnly = true;
+});
+
+// Add authorization
 builder.Services.AddAuthorization();
+
+// Add Scoped PasswordHasher for Player (used for hashing player passwords)
 builder.Services.AddScoped<PasswordHasher<Player>>();
 
-
+// Add Swagger for API Documentation (Optional)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -79,6 +82,10 @@ app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Use session middleware
+app.UseSession();
+
+// Map controllers (API endpoints)
 app.MapControllers();
 
 app.Run();

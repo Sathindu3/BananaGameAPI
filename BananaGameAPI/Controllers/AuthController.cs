@@ -1,5 +1,6 @@
 ﻿using BananaGameAPI.DTOs;
 using BananaGameAPI.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -11,11 +12,13 @@ namespace BananaGameAPI.Controllers
     {
         private readonly AuthService _authService;
 
+        // Injecting AuthService to interact with the authentication logic
         public AuthController(AuthService authService)
         {
             _authService = authService;
         }
 
+        // Register a new player
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterPlayerDto dto)
         {
@@ -32,15 +35,17 @@ namespace BananaGameAPI.Controllers
             return Ok(new { message = result });
         }
 
-        // ✅ New GET Login Method
+        // Login player and store session data
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginPlayerDto dto)
         {
-            var player = await _authService.LoginPlayer(dto);
+            // Attempt to log in the player and set session data
+            var player = await _authService.LoginPlayer(dto, HttpContext.Session);
 
             if (player == null)
                 return Unauthorized(new { message = "Invalid email or password!" });
 
+            // Respond with player details after successful login
             return Ok(new
             {
                 id = player.Id,
@@ -49,7 +54,22 @@ namespace BananaGameAPI.Controllers
             });
         }
 
+        // Logout player and clear session
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // Clear session when logging out
+            _authService.LogoutPlayer(HttpContext.Session);
+            return Ok(new { message = "Logged out successfully!" });
+        }
 
-
+        // Check if the user is logged in
+        [HttpGet("check-login")]
+        public IActionResult CheckLogin()
+        {
+            // Check session for login status
+            var isLoggedIn = _authService.IsLoggedIn(HttpContext.Session);
+            return Ok(new { isLoggedIn });
+        }
     }
 }
