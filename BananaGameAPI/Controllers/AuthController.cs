@@ -33,8 +33,8 @@ namespace BananaGameAPI.Controllers
         }
 
         // ✅ New GET Login Method
-        [HttpPost("login")] // Change from [HttpGet] to [HttpPost]
-        public async Task<IActionResult> Login([FromBody] LoginPlayerDto dto) // Accept JSON body
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginPlayerDto dto)
         {
             var player = await _authService.LoginPlayer(dto);
 
@@ -48,6 +48,7 @@ namespace BananaGameAPI.Controllers
                 email = player.Email
             });
         }
+
 
 
     }
