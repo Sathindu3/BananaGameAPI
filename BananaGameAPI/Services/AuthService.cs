@@ -40,17 +40,18 @@ namespace BananaGameAPI.Services
         }
 
 
-        public async Task<string> LoginPlayer(LoginPlayerDto dto)
+        public async Task<Player?> LoginPlayer(LoginPlayerDto dto)
         {
             var player = await _context.Players.FirstOrDefaultAsync(p => p.Email == dto.Email);
             if (player == null)
-                return "Invalid email or password!";
+                return null;
 
-            var verificationResult = _passwordHasher.VerifyHashedPassword(player, player.PasswordHash, dto.Password); // ✅ FIXED
+            var verificationResult = _passwordHasher.VerifyHashedPassword(player, player.PasswordHash, dto.Password);
             if (verificationResult == PasswordVerificationResult.Failed)
-                return "Invalid email or password!";
+                return null;
 
-            return "Login successful!";
+            return player; // ✅ Return player details instead of just a string
         }
+
     }
 }

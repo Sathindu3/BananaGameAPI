@@ -19,6 +19,9 @@ namespace BananaGameAPI.Models
 
         // ✅ Add a navigation property for Scores
         public ICollection<Score> Scores { get; set; } = new List<Score>();
+
+        // ✅ Add a navigation property for GameResults
+        public ICollection<GameResult> GameResults { get; set; } = new List<GameResult>();
     }
 
     public class Score
@@ -35,6 +38,34 @@ namespace BananaGameAPI.Models
         public int Points { get; set; }
 
         public DateTime DateRecorded { get; set; } = DateTime.UtcNow;
+    }
+
+    public class GameResult
+    {
+        public int Id { get; set; }
+
+        [Required]
+        public int Player1Id { get; set; }
+
+        [ForeignKey("Player1Id")]
+        public Player Player1 { get; set; } // ✅ Navigation Property
+
+        [Required]
+        public int Player2Id { get; set; }
+
+        [ForeignKey("Player2Id")]
+        public Player Player2 { get; set; } // ✅ Navigation Property
+
+        [Required]
+        public int Player1Score { get; set; }
+
+        [Required]
+        public int Player2Score { get; set; }
+
+        [Required]
+        public string Winner { get; set; } // Stores Username of Winner
+
+        public DateTime GameDate { get; set; } = DateTime.UtcNow;
     }
 
     public class QuizResponse

@@ -1,6 +1,7 @@
 ﻿using BananaGameAPI.DTOs;
 using BananaGameAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace BananaGameAPI.Controllers
 {
@@ -18,6 +19,9 @@ namespace BananaGameAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterPlayerDto dto)
         {
+            if (dto == null)
+                return BadRequest(new { message = "Invalid request body." });
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -27,5 +31,24 @@ namespace BananaGameAPI.Controllers
 
             return Ok(new { message = result });
         }
+
+        // ✅ New GET Login Method
+        [HttpPost("login")] // Change from [HttpGet] to [HttpPost]
+        public async Task<IActionResult> Login([FromBody] LoginPlayerDto dto) // Accept JSON body
+        {
+            var player = await _authService.LoginPlayer(dto);
+
+            if (player == null)
+                return Unauthorized(new { message = "Invalid email or password!" });
+
+            return Ok(new
+            {
+                id = player.Id,
+                username = player.Username,
+                email = player.Email
+            });
+        }
+
+
     }
 }

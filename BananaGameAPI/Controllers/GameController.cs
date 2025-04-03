@@ -102,5 +102,16 @@ namespace BananaGameAPI.Controllers
                 return StatusCode(500, new { success = false, message = "Error retrieving leaderboard", error = ex.Message });
             }
         }
+
+        [HttpPost("saveResult")]
+        public async Task<IActionResult> SaveGameResult([FromBody] GameResult result)
+        {
+            if (result == null) return BadRequest("Invalid game result data");
+
+            _context.GameResults.Add(result);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Game result saved successfully!" });
+        }
     }
 }
