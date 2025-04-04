@@ -29,7 +29,7 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<GameDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 36)) // Adjust MySQL version if needed
+        new MySqlServerVersion(new Version(8, 0, 36)) 
     ));
 
 // Register AuthService for Dependency Injection
@@ -43,14 +43,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/api/auth/logout"; // Redirect to logout path
         options.Cookie.HttpOnly = true;  // Make the cookie HTTP-only
         options.SlidingExpiration = true; // Enable sliding expiration
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(1); // Cookie expiration time
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(5); // Cookie expiration time
     });
 
 // Add session services
 builder.Services.AddDistributedMemoryCache(); // Use in-memory cache for session storage
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(1); // Set timeout for sessions
+    options.IdleTimeout = TimeSpan.FromMinutes(5); // Set timeout for sessions
     options.Cookie.HttpOnly = true;
 });
 
