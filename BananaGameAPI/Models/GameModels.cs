@@ -48,13 +48,13 @@ namespace BananaGameAPI.Models
         public int Player1Id { get; set; }
 
         [ForeignKey("Player1Id")]
-        public Player Player1 { get; set; } // ✅ Navigation Property
+        public Player Player1 { get; set; } 
 
         [Required]
         public int Player2Id { get; set; }
 
         [ForeignKey("Player2Id")]
-        public Player Player2 { get; set; } // ✅ Navigation Property
+        public Player Player2 { get; set; } 
 
         [Required]
         public int Player1Score { get; set; }
@@ -63,7 +63,7 @@ namespace BananaGameAPI.Models
         public int Player2Score { get; set; }
 
         [Required]
-        public string Winner { get; set; } // Stores Username of Winner
+        public string Winner { get; set; } 
 
         public DateTime GameDate { get; set; } = DateTime.UtcNow;
     }

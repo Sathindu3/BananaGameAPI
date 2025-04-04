@@ -22,7 +22,7 @@ namespace BananaGameAPI.Controllers
             _httpClient = new HttpClient();
         }
 
-        // ✅ Fetch Quiz from External API
+     
         [HttpGet("quiz")]
         public async Task<IActionResult> GetQuiz()
         {
@@ -31,7 +31,7 @@ namespace BananaGameAPI.Controllers
                 string apiUrl = "https://marcconrad.com/uob/banana/api.php";
                 var response = await _httpClient.GetStringAsync(apiUrl);
 
-                // ✅ Log API Response (for debugging)
+                
                 Console.WriteLine("RAW API Response: " + response);
 
                 var quiz = JsonConvert.DeserializeObject<QuizResponse>(response);
@@ -49,7 +49,7 @@ namespace BananaGameAPI.Controllers
             }
         }
 
-        // ✅ Submit Score (for individual player actions)
+      
         [HttpPost("score")]
         public async Task<IActionResult> SubmitScore([FromBody] Score score)
         {
@@ -66,7 +66,7 @@ namespace BananaGameAPI.Controllers
                     return NotFound(new { success = false, message = "Player not found!" });
                 }
 
-                // Create and save the new score
+                
                 var newScore = new Score
                 {
                     PlayerId = player.Id,
@@ -84,7 +84,7 @@ namespace BananaGameAPI.Controllers
             }
         }
 
-        // ✅ Get Top 5 Leaderboard Scores
+        
         [HttpGet("leaderboard")]
         public IActionResult GetLeaderboard()
         {
@@ -103,7 +103,7 @@ namespace BananaGameAPI.Controllers
             }
         }
 
-        // ✅ Save Game Result (this includes winner information and match result)
+       
         
     }
 }

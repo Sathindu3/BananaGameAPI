@@ -11,6 +11,6 @@ namespace BananaGameAPI.DTOs
         public string Email { get; set; } = string.Empty;
 
         [Required, MinLength(6)]
-        public string Password { get; set; } = string.Empty; // ✅ Accepts only valid passwords.
+        public string Password { get; set; } = string.Empty; 
     }
 }
