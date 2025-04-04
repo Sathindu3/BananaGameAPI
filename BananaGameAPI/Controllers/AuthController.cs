@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using BananaGameAPI.Data;
-using BananaGameAPI.Models;
-using System.Linq;
+﻿using BananaGameAPI.DTOs;
+using BananaGameAPI.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace BananaGameAPI.Controllers
 {
@@ -11,38 +10,66 @@ namespace BananaGameAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly GameDbContext _context;
+        private readonly AuthService _authService;
 
-        public AuthController(GameDbContext context)
+        // Injecting AuthService to interact with the authentication logic
+        public AuthController(AuthService authService)
         {
-            _context = context;
+            _authService = authService;
         }
 
-        // Player Signup
-        [HttpPost("signup")]
-        public async Task<IActionResult> Signup([FromBody] Player player)
+        // Register a new player
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterPlayerDto dto)
         {
-            if (_context.Players.Any(p => p.Username == player.Username))
-            {
-                return BadRequest(new { message = "Username already exists" });
-            }
+            if (dto == null)
+                return BadRequest(new { message = "Invalid request body." });
 
-            _context.Players.Add(player);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Signup successful!" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.RegisterPlayer(dto);
+            if (result == "Email already exists!")
+                return Conflict(new { message = result });
+
+            return Ok(new { message = result });
         }
 
-        // Player Login
+        // Login player and store session data
         [HttpPost("login")]
-        public IActionResult Login([FromBody] Player player)
+        public async Task<IActionResult> Login([FromBody] LoginPlayerDto dto)
         {
-            var existingPlayer = _context.Players.FirstOrDefault(p => p.Username == player.Username && p.Password == player.Password);
-            if (existingPlayer == null)
-            {
-                return Unauthorized(new { message = "Invalid credentials" });
-            }
+            // Attempt to log in the player and set session data
+            var player = await _authService.LoginPlayer(dto, HttpContext.Session);
 
-            return Ok(new { message = "Login successful!", playerId = existingPlayer.Id, username = existingPlayer.Username });
+            if (player == null)
+                return Unauthorized(new { message = "Invalid email or password!" });
+
+            // Respond with player details after successful login
+            return Ok(new
+            {
+                id = player.Id,
+                username = player.Username,
+                email = player.Email
+            });
+        }
+
+        // Logout player and clear session
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // Clear session when logging out
+            _authService.LogoutPlayer(HttpContext.Session);
+            return Ok(new { message = "Logged out successfully!" });
+        }
+
+        // Check if the user is logged in
+        [HttpGet("check-login")]
+        public IActionResult CheckLogin()
+        {
+            // Check session for login status
+            var isLoggedIn = _authService.IsLoggedIn(HttpContext.Session);
+            return Ok(new { isLoggedIn });
         }
     }
 }

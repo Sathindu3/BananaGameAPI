@@ -4,6 +4,8 @@ using BananaGameAPI.Models;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System;
+using System.Linq;
 
 namespace BananaGameAPI.Controllers
 {
@@ -20,31 +22,88 @@ namespace BananaGameAPI.Controllers
             _httpClient = new HttpClient();
         }
 
-        // Fetch Quiz
+     
         [HttpGet("quiz")]
         public async Task<IActionResult> GetQuiz()
         {
-            string apiUrl = "https://marcconrad.com/uob/banana/api.php";
-            var response = await _httpClient.GetStringAsync(apiUrl);
-            var quiz = JsonConvert.DeserializeObject<QuizResponse>(response);
-            return Ok(quiz);
+            try
+            {
+                string apiUrl = "https://marcconrad.com/uob/banana/api.php";
+                var response = await _httpClient.GetStringAsync(apiUrl);
+
+                
+                Console.WriteLine("RAW API Response: " + response);
+
+                var quiz = JsonConvert.DeserializeObject<QuizResponse>(response);
+
+                if (quiz == null || string.IsNullOrEmpty(quiz.Question))
+                {
+                    return NotFound(new { success = false, message = "Quiz data not found" });
+                }
+
+                return Ok(new { success = true, data = quiz });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Error fetching quiz", error = ex.Message });
+            }
         }
 
-        // Submit Score
+      
         [HttpPost("score")]
-        public IActionResult SubmitScore([FromBody] Score score)
+        public async Task<IActionResult> SubmitScore([FromBody] Score score)
         {
-            _context.Scores.Add(score);
-            _context.SaveChanges();
-            return Ok(new { message = "Score saved!" });
+            if (score == null || score.PlayerId <= 0)
+            {
+                return BadRequest(new { success = false, message = "Invalid score data" });
+            }
+
+            try
+            {
+                var player = await _context.Players.FindAsync(score.PlayerId);
+                if (player == null)
+                {
+                    return NotFound(new { success = false, message = "Player not found!" });
+                }
+
+                
+                var newScore = new Score
+                {
+                    PlayerId = player.Id,
+                    Points = score.Points
+                };
+
+                _context.Scores.Add(newScore);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Score saved!", data = newScore });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Error saving score", error = ex.Message });
+            }
         }
 
-        // Get Leaderboard
+        
         [HttpGet("leaderboard")]
         public IActionResult GetLeaderboard()
         {
-            var leaderboard = _context.Scores.OrderByDescending(s => s.Points).Take(5).ToList();
-            return Ok(leaderboard);
+            try
+            {
+                var leaderboard = _context.Scores
+                    .OrderByDescending(s => s.Points)
+                    .Take(5)
+                    .ToList();
+
+                return Ok(new { success = true, data = leaderboard });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Error retrieving leaderboard", error = ex.Message });
+            }
         }
+
+       
+        
     }
 }
